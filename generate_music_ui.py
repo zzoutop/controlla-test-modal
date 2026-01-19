@@ -36,6 +36,7 @@ image = (
     .uv_pip_install(
         "torch==2.8.0",
         "torchaudio==2.8.0",
+        "hf_transfer>=0.1.9",
         "git+https://github.com/ace-step/ACE-Step.git@6ae0852b1388de6dc0cca26b31a86d711f723cb3",  # we can install directly from GitHub!
     )
 )
@@ -79,7 +80,7 @@ trained_cache = modal.Volume.from_name("checkpoints", create_if_missing=True)
 # and then run the `load_model` Python function.
 
 image = image.env(
-    {"HF_HUB_CACHE": trained_cache_dir, "HF_HUB_ENABLE_HF_TRANSER": "1"}
+    {"HF_HUB_CACHE": trained_cache_dir, "HF_HUB_ENABLE_HF_TRANSFER": "1"}
 ).run_function(load_model, volumes={trained_cache_dir: trained_cache})
 
 # While we're at it, let's also define the environment for our UI.
@@ -125,7 +126,7 @@ class MusicGenerator:
         duration: float = 60.0,
         format: str = "wav",  # or mp3
         manual_seeds: Optional[int] = 1,
-        lora_name_or_path: Optional[str] = None,
+        lora_name_or_path: Optional[str] = "none",
     ) -> bytes:
         import uuid
 
@@ -252,8 +253,6 @@ def ui():
     # we make a `.remote` call to the music generator
 
     temp_dir = Path("/dev/shm")
-    print(f"Trained cache dir: {trained_cache_dir}")
-    print(f"Path exists: {os.path.exists(trained_cache_dir)}")
 
     sub_folders = [x for x in Path(trained_cache_dir).iterdir() if x.is_dir()]
     existing_checkpoints = [
@@ -268,9 +267,13 @@ def ui():
         lyrics: str,
         duration: float = 30.0,
         format: str = "wav",
-        lora: str = None,
+        lora_folder: str = "none",
     ):
-        lora_name_or_path = trained_cache_dir if lora else None
+        lora_name_or_path = (
+            lora_folder
+            if lora_folder == "none"
+            else trained_cache_dir + "/" + lora_folder
+        )
         if lora_name_or_path:
             print(f"Setting lora to {lora_name_or_path}")
             print(f"Path exists: {os.path.exists(lora_name_or_path)}")
