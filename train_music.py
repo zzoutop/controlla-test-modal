@@ -59,11 +59,11 @@ app = modal.App("controlla-train-music")
 def train(
     # Training hyperparameters
     learning_rate: float = 1e-4,
-    num_workers: int = 4,
+    num_workers: int = 8,
     shift: float = 3.0,
     max_steps: int = 200000,
-    every_n_train_steps: int = 2000,
-    every_plot_step: int = 2000,
+    every_n_train_steps: int = 20,
+    every_plot_step: int = 20,
     epochs: int = 15,
     precision: str = "32",
     accumulate_grad_batches: int = 1,
@@ -200,11 +200,11 @@ def train(
 def train_main(
     # Training hyperparameters
     learning_rate: float = 1e-4,
-    num_workers: int = 4,
+    num_workers: int = 8,
     shift: float = 3.0,
     max_steps: int = 200000,
-    every_n_train_steps: int = 2000,
-    every_plot_step: int = 2000,
+    every_n_train_steps: int = 20,
+    every_plot_step: int = 20,
     epochs: int = 15,
     precision: str = "32",
     accumulate_grad_batches: int = 1,
