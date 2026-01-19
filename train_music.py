@@ -258,6 +258,32 @@ def train_main(
     print(f"✅ Training completed: {result}")
 
 
+# Optional: Function to clear dataset/config files from volumes
+@app.function(
+    image=modal.Image.debian_slim(python_version="3.10").uv_pip_install("requests"),
+    volumes={
+        "/data": dataset_volume,
+    },
+)
+def clear_files():
+    """
+    Helper function to clear dataset and config files from Modal volumes.
+    This should be run from your local machine to clear files.
+
+    """
+    from pathlib import Path
+
+    directory_path = "/data/dataset"
+    p = Path(directory_path)
+    if p.is_dir():
+        for item in p.iterdir():
+            if item.is_file():
+                item.unlink()  # Use unlink() to remove a file
+        print(f"All files removed from: {directory_path}, folders kept.")
+    else:
+        print(f"Error: {directory_path} is not a valid directory.")
+
+
 # Optional: Function to upload dataset/config files to volumes
 @app.function(
     image=modal.Image.debian_slim(python_version="3.10").uv_pip_install("requests"),
