@@ -205,7 +205,7 @@ def train_main(
     max_steps: int = 200000,
     every_n_train_steps: int = 2000,
     every_plot_step: int = 2000,
-    epochs: int = -1,
+    epochs: int = 15,
     precision: str = "32",
     accumulate_grad_batches: int = 1,
     gradient_clip_val: float = 0.5,
