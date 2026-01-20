@@ -176,11 +176,35 @@ def train(
         subprocess.check_call(base_cmd)
         print("Training completed successfully!")
 
+        # copy from logs volume to trained_cache volume, format properly
+        import shutil
+        import os
+        from pathlib import Path
+        from datetime import datetime
+
+        log_dir = Path(logger_dir)
+        for file in log_dir.glob("**/pytorch_lora_weights.safetensors"):
+            parent_dir = file.parent.name
+            curr_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            dest_dir = trained_cache_dir + "/" + curr_datetime + "_" + parent_dir
+            print(f"Copying {file} to {dest_dir}")
+            os.makedirs(
+                dest_dir,
+                exist_ok=True,
+            )
+            shutil.copy(file, dest_dir)
+
         # Commit volumes after training to save checkpoints and logs
         trained_cache.commit()
         logs_volume.commit()
         dataset_volume.commit()
         config_volume.commit()
+
+        print("Copied all safetensors to trained_cache volume")
+
+        print(
+            "Please generate new songs from new LoRA @ https://zzoutop--controlla-test-modal-ui.modal.run/"
+        )
 
         return {"status": "success", "exp_name": exp_name}
     except Exception as e:
