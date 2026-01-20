@@ -192,7 +192,7 @@ def train(
                 dest_dir,
                 exist_ok=True,
             )
-            shutil.copy(file, dest_dir)
+            shutil.move(file, dest_dir)
 
         # Commit volumes after training to save checkpoints and logs
         trained_cache.commit()
