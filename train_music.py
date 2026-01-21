@@ -81,6 +81,7 @@ def train(
     # Multi-GPU settings (for future use)
     num_nodes: int = 1,
     devices: int = 1,
+    job_id: Optional[str] = None,
 ):
     """
     Train a LoRA adapter for ACE-Step model on Modal.
@@ -129,6 +130,11 @@ def train(
     os.makedirs(logger_dir, exist_ok=True)
     os.makedirs(os.path.dirname(lora_config_path), exist_ok=True)
 
+    dataset_path = f"{dataset_path}/{job_id}"
+    logger_dir = f"{logger_dir}/{job_id}"
+    args.dataset_path = dataset_path
+    args.logger_dir = logger_dir
+
     print(f"Starting training with experiment name: {exp_name}")
     print(f"Dataset path: {dataset_path}")
     print(f"Checkpoint dir: {checkpoint_dir}")
@@ -147,7 +153,7 @@ def train(
             sys.executable,
             "/root/ACE-Step/convert2hf_dataset.py",
             "--data_dir",
-            "/data/dataset",
+            "/data/dataset/" + job_id,
             "--repeat_count",
             "2",
             "--output_name",
@@ -186,7 +192,15 @@ def train(
         for file in log_dir.glob("**/pytorch_lora_weights.safetensors"):
             parent_dir = file.parent.name
             curr_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            dest_dir = trained_cache_dir + "/" + curr_datetime + "_" + parent_dir
+            dest_dir = (
+                trained_cache_dir
+                + "/"
+                + curr_datetime
+                + "_"
+                + job_id
+                + "_"
+                + parent_dir
+            )
             print(f"Copying {file} to {dest_dir}")
             os.makedirs(
                 dest_dir,
@@ -246,6 +260,7 @@ def train_main(
     # Multi-GPU settings
     num_nodes: int = 1,
     devices: int = 1,
+    job_id: Optional[str] = "d70df2b1-b4ee-490f-8253-2e03e402bc0b",
 ):
     """
     Local entrypoint to trigger training on Modal.
@@ -277,6 +292,7 @@ def train_main(
         lora_config_path=lora_config_path,
         num_nodes=num_nodes,
         devices=devices,
+        job_id=job_id,
     )
 
     print(f"✅ Training completed: {result}")
@@ -318,7 +334,7 @@ def clear_files():
 )
 def upload_files(
     dataset_path: Optional[str] = None,
-    config_path: Optional[str] = None,
+    job_id: Optional[str] = None,
 ):
     """
     Helper function to upload dataset and config files to Modal volumes.
@@ -340,7 +356,7 @@ def upload_files(
             response.raise_for_status()
             file_raw_name = dataset_path.split("/")[-1]
             file_name = unquote(file_raw_name)
-            save_path = f"/data/dataset/{file_name}"
+            save_path = f"/data/dataset/{job_id}/{file_name}"
             print(f"Saving dataset url {dataset_path} to {save_path}")
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             with open(save_path, "wb") as f:
@@ -350,33 +366,7 @@ def upload_files(
             import shutil
 
             # copy the file to the volume
-            shutil.copy(dataset_path, "/data/dataset")
-
-    if config_path:
-        print(f"Uploading config from {config_path} to /configs...")
-        # check if url
-        if config_path.startswith("http"):
-            # download the file
-            import requests
-            from urllib.parse import unquote
-            import os
-
-            response = requests.get(config_path)
-            response.raise_for_status()
-            file_raw_name = config_path.split("/")[-1]
-            file_name = unquote(file_raw_name)
-            save_path = f"/configs/{file_name}"
-            print(f"Saving config url {config_path} to {save_path}")
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            with open(save_path, "wb") as f:
-                f.write(response.content)
-
-        else:
-            import shutil
-
-            # copy the file to the volume
-            shutil.copy(config_path, "/configs/lora_config.json")
+            shutil.copy(dataset_path, f"/data/dataset/{job_id}")
 
     dataset_volume.commit()
-    config_volume.commit()
     print("Files uploaded successfully!")
